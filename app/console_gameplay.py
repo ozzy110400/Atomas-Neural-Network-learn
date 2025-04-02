@@ -375,7 +375,7 @@ class BoardLinkedList:
     def get_merging_index(self) -> int:
         for i in range(len(self.nodes)):
             node = self.nodes[i]
-            if node.value == -1:
+            if node.value < 0:
                 if node.next.value > 0 and node.prev.value > 0 and node.next.value == node.prev.value:
                     return i
         return -1
@@ -391,12 +391,19 @@ class BoardLinkedList:
         node = self.nodes[merging_index]
         prev_node = node.prev
         next_node = node.next
-        while prev_node.value == next_node.value and prev_node.value > 0 and prev_node != next_node:
-            increment = 1
-            if node.value == -2:
-                increment = 3
 
-            new_val = max(node.value, prev_node.value) + increment
+        # merge if a plus (-1) has identical atoms on both sides,
+        # or there is an antimatter plus (-2) with anything to merge with on both sides
+        while prev_node != next_node and \
+                ((prev_node.value == next_node.value and prev_node.value > 0) or \
+                 (prev_node.value == -2 or next_node.value == -2)):
+            increment = 1
+            if node.value == -2 or prev_node.value == -2 or next_node.value == -2:
+                increment = 3
+            max_val = max(node.value, prev_node.value, next_node.value)
+            max_val = 1 if max_val < 0 else max_val
+
+            new_val = max_val + increment
             node.value = new_val
             prev_node.prev.next = node
             node.prev = prev_node.prev
