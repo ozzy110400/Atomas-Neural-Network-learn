@@ -3,6 +3,14 @@ import pygame
 
 
 class Game:
+    """
+        (0, +inf) - atoms,
+        -5 - convert atom to plus sign,
+        -1 - plus sign,
+        -2 - black matter (adds any two particles),
+        -3 - I don't remember, seems like it should be minus, which pulls atom from the circumference,
+        -4 - a particle that copies any particle at an index i.
+    """
     def __init__(self):
         self.HIGHEST_PIECE = 3
         self.DIAMETER_BIG = 600
