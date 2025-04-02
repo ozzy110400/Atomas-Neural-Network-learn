@@ -124,72 +124,82 @@ class Game:
         return piece, to_gen
 
 
+    # def merge(self, board):
+    #     pluses = np.where(board == -1)[0]
+    #     temp = board[board != 0]
+    #     s = temp.size
+    #     cell = 0
+    #     index = None
+    #     blk_pluses = np.where(board == -2)[0]
+    #
+    #     # black merging
+    #     if blk_pluses.size != 0:
+    #         if s > 2:
+    #             index = blk_pluses[0]
+    #             cell = max([cell, temp[(index+1)%s]])
+    #             if cell == -1:
+    #                 cell = 1
+    #             self.SCORE = self.SCORE + np.abs(2 * cell)
+    #             cell = cell + 3
+    #             temp[index] = cell
+    #             temp[index - 1], temp[(index + 1) % s] = 0, 0
+    #             #draw_board(temp, piece)
+    #             temp = self.arrange(temp)
+    #             temp = temp[temp != 0]
+    #             s = temp.size
+    #             if index != 0:
+    #                 index = index - 1
+    #             if index == s:
+    #                 index = index - s
+    #             elif index < 0:
+    #                 index = index + s
+    #
+    #     for i in pluses:
+    #         if temp[i-1] == temp[(i+1)%s]:
+    #             index = i
+    #
+    #     while index != None:
+    #         if temp[index-1] == -1 or temp[(index+1)%s] == -1:
+    #             break
+    #
+    #         if temp[index-1] == temp[(index+1)%s]:
+    #             cell = max([cell, temp[(index+1)%s]])
+    #             cell = cell + 1
+    #             temp[index] = cell
+    #             self.SCORE = self.SCORE + np.abs(2**cell)
+    #             temp[index-1], temp[(index+1)%s] = 0, 0
+    #             #draw_board(temp, piece)
+    #             if temp[0] == 0:
+    #                 adjust = 1
+    #             else:
+    #                 adjust = 0
+    #             temp = self.arrange(temp)
+    #             temp = temp[temp != 0]
+    #             s = temp.size
+    #             if s <= 2:
+    #                 break
+    #             if index != 0:
+    #                 index = index - 1 - adjust
+    #             if index == s:
+    #                 index = index - s
+    #             elif index < 0:
+    #                 index = index + s
+    #
+    #         else:
+    #             index = None
+    #
+    #     board = self.arrange(temp)
+    #     self.BOARD = board
+    #     return board
+
+
     def merge(self, board):
-        pluses = np.where(board == -1)[0]
-        temp = board[board != 0]
-        s = temp.size
-        cell = 0
-        index = None
-        blk_pluses = np.where(board == -2)[0]
+        linked_list = BoardLinkedList(board)
 
-        # black merging
-        if blk_pluses.size != 0:
-            if s > 2:
-                index = blk_pluses[0]
-                cell = max([cell, temp[(index+1)%s]])
-                if cell == -1:
-                    cell = 1
-                self.SCORE = self.SCORE + np.abs(2 * cell)
-                cell = cell + 3
-                temp[index] = cell
-                temp[index - 1], temp[(index + 1) % s] = 0, 0
-                #draw_board(temp, piece)
-                temp = self.arrange(temp)
-                temp = temp[temp != 0]
-                s = temp.size
-                if index != 0:
-                    index = index - 1
-                if index == s:
-                    index = index - s
-                elif index < 0:
-                    index = index + s
+        while linked_list.get_merging_index() >= 0:
+            linked_list.merge_nodes()
 
-        for i in pluses:
-            if temp[i-1] == temp[(i+1)%s]:
-                index = i
-
-        while index != None:
-            if temp[index-1] == -1 or temp[(index+1)%s] == -1:
-                break
-
-            if temp[index-1] == temp[(index+1)%s]:
-                cell = max([cell, temp[(index+1)%s]])
-                cell = cell + 1
-                temp[index] = cell
-                self.SCORE = self.SCORE + np.abs(2**cell)
-                temp[index-1], temp[(index+1)%s] = 0, 0
-                #draw_board(temp, piece)
-                if temp[0] == 0:
-                    adjust = 1
-                else:
-                    adjust = 0
-                temp = self.arrange(temp)
-                temp = temp[temp != 0]
-                s = temp.size
-                if s <= 2:
-                    break
-                if index != 0:
-                    index = index - 1 - adjust
-                if index == s:
-                    index = index - s
-                elif index < 0:
-                    index = index + s
-
-            else:
-                index = None
-
-        board = self.arrange(temp)
-        self.BOARD = board
+        board = linked_list.construct_board()
         return board
 
 
@@ -248,8 +258,10 @@ class Game:
         self.BOARD = self.create_board()
         self.GAME_OVER = False
 
+        not_random = [2, 2, 3]
         for i in range(3):
-            piece = np.random.choice([1, 2, 3])
+            # piece = np.random.choice([1, 2, 3])
+            piece = not_random[i]
             self.BOARD = self.drop_piece(self.BOARD, 0, piece)
 
         to_gen = True
@@ -266,6 +278,8 @@ class Game:
     def play_game(self):
         self.MOVE = 0
         self.BOARD, self.GAME_OVER, self.PIECE, self.TO_GEN = self.game_reset()
+
+        print(self.BOARD)
         while not self.GAME_OVER:
             self.MOVE += 1
             self.check_high(self.BOARD)
@@ -330,6 +344,91 @@ class Game:
         self.BOARD = self.merge(self.BOARD)
         if not self.CONVERTABLE:
             self.PIECE, self.TO_GEN = self.generate_piece(self.BOARD, self.TO_GEN)
+
+
+class BoardLinkedList:
+    def __init__(self, board: np.array):
+        self.nodes = []
+
+        board = board[np.nonzero(board)]
+        for i in range(board.size):
+            node = Node(value=board[i])
+            self.nodes.append(node)
+
+        for i in range(len(self.nodes)):
+            if len(self.nodes) <= 1:
+                break
+
+            node = self.nodes[i]
+            node.prev = self.nodes[i-1]
+            node.next = self.nodes[(i+1)%len(self.nodes)]
+
+
+    def get_merging_index(self) -> int:
+        for i in range(len(self.nodes)):
+            node = self.nodes[i]
+            if node.value == -1:
+                if node.next.value > 0 and node.prev.value > 0 and node.next.value == node.prev.value:
+                    return i
+        return -1
+
+
+    def merge_nodes(self) -> None:
+        merging_index = self.get_merging_index()
+        if merging_index == -1:
+            return None
+
+        new_nodes = []
+
+        node = self.nodes[merging_index]
+        prev_node = node.prev
+        next_node = node.next
+        while prev_node.value == next_node.value and prev_node.value > 0 and prev_node != next_node:
+            increment = 1
+            if node.value == -2:
+                increment = 3
+
+            new_val = max(node.value, prev_node.value) + increment
+            node.value = new_val
+            prev_node.prev.next = node
+            node.prev = prev_node.prev
+            next_node.next.prev = node
+            node.next = next_node.next
+
+            prev_node = node.prev
+            next_node = node.next
+
+        next_node = node.next
+        new_nodes.append(node)
+        while node != next_node:
+            new_nodes.append(next_node)
+            next_node = next_node.next
+
+        self.nodes = new_nodes
+
+
+    def construct_board(self) -> np.array:
+        board = np.zeros(20)
+        first_node = self.nodes[0]
+
+        node = first_node
+        board[0] = node.value
+        node = node.next
+        i = 1
+
+        while node != first_node:
+            board[i] = node.value
+            node = node.next
+            i += 1
+
+        return board
+
+
+class Node:
+    def __init__(self, value=None, next=None, prev=None):
+        self.value = value
+        self.next = next
+        self.prev = prev
 
 
 if __name__ == "__main__":
