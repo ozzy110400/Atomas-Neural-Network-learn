@@ -306,8 +306,8 @@ class Game:
             self.GAME_OVER = self.filled(self.BOARD)
             self.check_high(self.BOARD)
 
-        for i in self.BOARD:
-            self.SCORE = self.SCORE + 2**i
+        for n in self.BOARD:
+            self.SCORE = self.SCORE + 2**n
         print(f"Final Score: {self.SCORE}")
 
 
